@@ -1,5 +1,7 @@
-__keys.py
 venv
 *.jpg
 *.png
+*.swp
+*.swo
+__*
 
