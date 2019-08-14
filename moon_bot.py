@@ -33,6 +33,7 @@ class MoonBot():
     def get_moon(self):    
         self.moon = MoonImage(DIMS, "todaysmoon")
         self.moon.set_moon_image()
+        cv2.imwrite("moon.jpg", self.moon.image)
 
     def get_test_moon(self):
         self.moon = CustomImage(DIMS, "testmoon", filename="moon.png")
@@ -41,10 +42,13 @@ class MoonBot():
         self.moon = CustomImage(DIMS, "testmoon", **kwargs)
 
     def set_moon_info_caption(self):
-        self.moon_info_caption = "|\n|" + str(self.moon.moon_info["phase"]) + "%    𝗶𝗹𝗹𝘂𝗺𝗶𝗻𝗮𝘁𝗲𝗱\n|" + str(self.moon.moon_info["distance"]) + "   𝓴𝓶  𝓯𝓻𝓸𝓶  𝓮𝓪𝓻𝓽𝓱" + "|\n\n"
+        self.moon_info_caption = "...\n\n" + str(self.moon.moon_info["distance"]) + "km from earth".rjust(22, " ") + "\n" + str(self.moon.moon_info["phase"]) + "%" + "illuminated".rjust(26, " ") + "\n\n"
 
     def post_moon_tweet(self):
         self.api.update_status(self.moon_info_caption + self.ascii)
+
+    def update_profile_image(self):
+        self.api.update_profile_image("./moon.jpg")
 
 
 
