@@ -1,0 +1,23 @@
+#!/home/sadie/bots/moonbot/asciimoon/venv/bin/python3.6
+
+from moon_bot import MoonBot#, TESS_CONFIG
+import cv2
+
+bot = MoonBot()
+bot.get_moon()
+bot.make_ascii_tweet(10, 1)
+bot.set_moon_info_caption()
+
+try:
+    bot.twitter_signin()
+    bot.post_moon_tweet()
+    bot.update_profile_image()
+except Exception:
+    pass
+
+try:
+    bot.mast_set_headers()
+    bot.post_moon_toot()
+    #bot.mast_update_profile_image()
+except Exception:
+    pass

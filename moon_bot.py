@@ -1,9 +1,11 @@
 import tweepy
+import requests
 from __keys import *
 from random import randint
 from moonmask.moon_image import MoonImage, CustomImage
 import numpy as np
 import cv2
+import mimetypes
 
 DIMS = (400, 400)
 
@@ -25,10 +27,51 @@ class MoonBot():
         self.convert_image_to_ascii(cols, scale)
 
     def twitter_signin(self):
-        auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-        auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-        auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+        auth = tweepy.OAuthHandler(TWITTER_CONSUMER_KEY, CONSUMER_SECRET)
+        auth.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
+        auth.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
         self.api = tweepy.API(auth)
+
+    def mast_set_headers(self):
+        self.mast_host_instance = 'https://botsin.space'
+        token = MAST_ACCESS_TOKEN
+        self.mast_headers = {}
+        self.mast_headers['Authorization'] = 'Bearer ' + token
+
+    def post_moon_toot(self):
+        data = {}
+        data['status'] = self.moon_info_caption + self.ascii 
+        data['visibility'] = 'public'
+
+        response = requests.post(
+            url=self.mast_host_instance + '/api/v1/statuses', data=data, headers=self.mast_headers)
+
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+
+    #TODO use python mastodon api port or figure out why this isn't working
+    def mast_update_profile_image(self):
+        files = {}
+        avatar = open("./moon.jpg", 'rb')
+        avatar_mime_type = mimetypes.guess_type("./moon.jpg")[0]
+        avatar_file_name = "moon_" + avatar_mime_type
+        files["avatar"] = (avatar_file_name, avatar, avatar_mime_type)
+        response = requests.post(
+            url=self.mast_host_instance + '/api/v1/accounts/update_credentials', files = files, headers = self.mast_headers, data = files)
+        print(response.text)
+        print(response.iter_content)
+        print(response.url)
+        print(response.reason)
+        print(response.request)
+        print(response.raw)
+        print(response.headers)
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+        
 
     def get_moon(self):    
         self.moon = MoonImage(DIMS, "todaysmoon")
