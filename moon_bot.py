@@ -2,7 +2,7 @@ import tweepy
 import requests
 from __keys import *
 from random import randint
-from moonmask.moon_image import MoonImage, CustomImage
+from moon.dialamoon import Moon as MoonImage
 import numpy as np
 import cv2
 import mimetypes
@@ -76,15 +76,12 @@ class MoonBot():
         
 
     def get_moon(self, **kwargs):    
-        self.moon = MoonImage(DIMS, "todaysmoon")
-        self.moon.set_moon_image(**kwargs)
+        self.moon = MoonImage()
+        self.moon.set_moon_phase(**kwargs)
         cv2.imwrite("moon.jpg", self.moon.image)
 
     def get_test_moon(self):
         self.moon = CustomImage(DIMS, "testmoon", filename="moon.png")
-
-    def get_random_image(self, **kwargs):
-        self.moon = CustomImage(DIMS, "testmoon", **kwargs)
 
     def set_moon_info_caption(self):
         self.moon_info_caption = "...\n\n" + str(self.moon.moon_info["distance"]) + "km from earth".rjust(22, " ") + "\n" + str(self.moon.moon_info["phase"]) + "%" + "illuminated".rjust(26, " ") + "\n\n"
