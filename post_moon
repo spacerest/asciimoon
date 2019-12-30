@@ -12,12 +12,12 @@ try:
     bot.twitter_signin()
     bot.post_moon_tweet()
     bot.update_profile_image()
-except Exception:
-    pass
+except Exception as e:
+    print(e)
 
 try:
     bot.mast_set_headers()
     bot.post_moon_toot()
-    #bot.mast_update_profile_image()
+#    #bot.mast_update_profile_image()
 except Exception:
     pass

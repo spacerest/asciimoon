@@ -12,22 +12,24 @@ DIMS = (400, 400)
 class MoonBot():
     def __init__(self):
         self.maxchar = 280 #twitter maxchar
-        self.ascii_chars = ["🌑","㉄","🌕"]
+        self.ascii_chars = ["🌑","㉄","㉄","🌕","🌕","🌕"]
         self.charwidth = 10
         self.charheight = 10
 
     def set_moon_chars(self):
         if self.moon.moon_info["age"] < 14:
-            self.ascii_chars[1] = "🌓"
+            self.ascii_chars[1] = "🌒"
+            self.ascii_chars[2] = "🌓"
         else:
-            self.ascii_chars[1] = "🌗"
+            self.ascii_chars[1] = "🌘"
+            self.ascii_chars[2] = "🌗"
 
     def make_ascii_tweet(self, cols, scale):
         self.set_moon_chars()
         self.convert_image_to_ascii(cols, scale)
 
     def twitter_signin(self):
-        auth = tweepy.OAuthHandler(TWITTER_CONSUMER_KEY, CONSUMER_SECRET)
+        auth = tweepy.OAuthHandler(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET)
         auth.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
         auth.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
         self.api = tweepy.API(auth)
@@ -73,9 +75,9 @@ class MoonBot():
             return False
         
 
-    def get_moon(self):    
+    def get_moon(self, **kwargs):    
         self.moon = MoonImage(DIMS, "todaysmoon")
-        self.moon.set_moon_image()
+        self.moon.set_moon_image(**kwargs)
         cv2.imwrite("moon.jpg", self.moon.image)
 
     def get_test_moon(self):
@@ -142,7 +144,7 @@ class MoonBot():
                 # get average luminance
                 avg = int(self.getAverageL(img))
                 # look up ascii char
-                gsval = self.ascii_chars[int((avg*3)/255)]
+                gsval = self.ascii_chars[int((avg*6)/255)]
                 # append ascii char to string
                 aimg[j].append(gsval)
         #transpose it as its currently rotated -90 deg
