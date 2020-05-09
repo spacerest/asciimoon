@@ -6,23 +6,34 @@ from moon.dialamoon import Moon as MoonImage
 import numpy as np
 import cv2
 import mimetypes
+import random
 
 DIMS = (400, 400)
+SOME_EMOJIS_I_LIKE = [
+"💥","💨", "💫","🦊","🐨","🦇","🦔","🐣","🦚","🦎","🐍","🐢","🐊","🐬","🐋","🦖","🦕","🐉","🐲","🐟","🐠","🦈","🐚","🦋","🕸","🌱","🌵","🍁","🍂","🦑","🦀","🌪","🌈","⚡","🔥","🌊","✨","☄","⛈","🌾","🌿","☘","🍀","🦗"]
 
 class MoonBot():
     def __init__(self):
         self.maxchar = 280 #twitter maxchar
-        self.ascii_chars = ["🌑","㉄","㉄","🌕","🌕","🌕"]
+        self.ascii_chars = ["🌑","㉄","㉄","🌕","🌕","🌕","🌕","🌕","🌕"]
         self.charwidth = 10
         self.charheight = 10
 
     def set_moon_chars(self):
         if self.moon.moon_info["age"] < 14:
-            self.ascii_chars[1] = "🌒"
-            self.ascii_chars[2] = "🌓"
+            self.ascii_chars[3] = "🌒"
+            self.ascii_chars[4] = "🌓"
+            self.ascii_chars[5] = "🌔"
         else:
-            self.ascii_chars[1] = "🌘"
-            self.ascii_chars[2] = "🌗"
+            self.ascii_chars[3] = "🌘"
+            self.ascii_chars[4] = "🌗"
+            self.ascii_chars[5] = "🌖"
+        self.ascii_chars[1] = self.choose_random_emoji()
+        self.ascii_chars[2] = self.choose_random_emoji()
+
+    def choose_random_emoji(self):
+        return random.choice(SOME_EMOJIS_I_LIKE)
+        
 
     def make_ascii_tweet(self, cols, scale):
         self.set_moon_chars()
@@ -87,7 +98,7 @@ class MoonBot():
         self.moon_info_caption = "...\n\n" + str(self.moon.moon_info["distance"]) + "km from earth".rjust(22, " ") + "\n" + str(self.moon.moon_info["phase"]) + "%" + "illuminated".rjust(26, " ") + "\n\n"
 
     def post_moon_tweet(self):
-        self.api.update_status(self.moon_info_caption + self.ascii)
+        self.api.update_status(self.ascii+self.moon_info_caption)
 
     def update_profile_image(self):
         self.api.update_profile_image("./moon.jpg")
@@ -141,7 +152,7 @@ class MoonBot():
                 # get average luminance
                 avg = int(self.getAverageL(img))
                 # look up ascii char
-                gsval = self.ascii_chars[int((avg*6)/255)]
+                gsval = self.ascii_chars[int((avg*9)/255)]
                 # append ascii char to string
                 aimg[j].append(gsval)
         #transpose it as its currently rotated -90 deg
