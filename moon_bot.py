@@ -9,32 +9,45 @@ import mimetypes
 import random
 
 DIMS = (400, 400)
-SOME_EMOJIS_I_LIKE = [
-"💥","💨", "💫","🦊","🐨","🦇","🦔","🐣","🦚","🦎","🐍","🐢","🐊","🐬","🐋","🦖","🦕","🐉","🐲","🐟","🐠","🦈","🐚","🦋","🕸","🌱","🌵","🍁","🍂","🦑","🦀","🌪","🌈","⚡","🔥","🌊","✨","☄","⛈","🌾","🌿","☘","🍀","🦗"]
+
+SHADOW_EMOJIS = ["💥","💨","🦊","🐨","🦇","🦔","🦚","🦎","🐍","🐢","🐊","🐬","🐋","🦖","🦕","🐉","🐲","🐟","🐠","🦈","🐚","🦋","🕸","🌱","🌵","🍁","🍂","🦑","🔥","🌊","☄","⛈","🌿","☘","🍀","🦗","💎","✂️","♻️","💿","💾","📼","📷","🏔","🌨","🌎","🥀","🌷","🌸","🐾","🐌","🐏","🐻","💍","🧶"]
+LIGHT_EMOJIS = ["💥","💨","💫","🦊","🐨","🦇","🦔","🐣","🦚","🦎","🐍","🐢","🐊","🐬","🐋","🦖","🦕","🐉","🐲","🐟","🐠","🦈","🐚","🦋","🕸","🌱","🌵","🍁","🍂","🦑","🌈","⚡","🔥","🌊","✨","☄","⛈","🌾","🌿","☘","🍀","🦗","📸","📀","🔑","🏔","🌨","🌎","🥀","🌷","🌸","🐾","🐌","🐏","🐻","💍","🧶"]
 
 class MoonBot():
     def __init__(self):
         self.maxchar = 280 #twitter maxchar
-        self.ascii_chars = ["🌑","㉄","㉄","🌕","🌕","🌕","🌕","🌕","🌕"]
+        self.ascii_chars = ["🌑","🌑","🌑","🌑","🌑","🌑","㉄","㉄","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
+"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕"]
         self.charwidth = 10
         self.charheight = 10
 
     def set_moon_chars(self):
         if self.moon.moon_info["age"] < 14:
-            self.ascii_chars[3] = "🌒"
-            self.ascii_chars[4] = "🌓"
-            self.ascii_chars[5] = "🌔"
+            self.ascii_chars[6:16] = ["🌒","🌒","🌒","🌒","🌒","🌒","🌒","🌒","🌒","🌒"]
+            self.ascii_chars[17:27] = ["🌓","🌓","🌓","🌓","🌓","🌓","🌓","🌓","🌓","🌓"]
+            self.ascii_chars[28:38] = ["🌔","🌔","🌔","🌔","🌔","🌔","🌔","🌔","🌔","🌔"]
         else:
-            self.ascii_chars[3] = "🌘"
-            self.ascii_chars[4] = "🌗"
-            self.ascii_chars[5] = "🌖"
-        self.ascii_chars[1] = self.choose_random_emoji()
-        self.ascii_chars[2] = self.choose_random_emoji()
+            self.ascii_chars[6:16] = ["🌘","🌘","🌘","🌘","🌘","🌘","🌘","🌘","🌘","🌘"]
+            self.ascii_chars[17:27] = ["🌗","🌗","🌗","🌗","🌗","🌗","🌗","🌗","🌗","🌗"]
+            self.ascii_chars[28:38] = ["🌖","🌖","🌖","🌖","🌖","🌖","🌖","🌖","🌖","🌖"]
+        self.ascii_chars[4] = self.choose_random_shadow_emoji()
+        self.ascii_chars[6] = self.choose_random_shadow_emoji()
+        self.ascii_chars[9] = self.choose_random_light_emoji()
 
-    def choose_random_emoji(self):
-        return random.choice(SOME_EMOJIS_I_LIKE)
+    def choose_random_shadow_emoji(self):
+        return random.choice(SHADOW_EMOJIS)
+    
+    def choose_random_light_emoji(self):
+        return random.choice(LIGHT_EMOJIS)
         
-
     def make_ascii_tweet(self, cols, scale):
         self.set_moon_chars()
         self.convert_image_to_ascii(cols, scale)
@@ -123,6 +136,10 @@ class MoonBot():
         h = w/scale
         # compute number of rows
         rows = int(H/h)
+
+        #why not get the average luminance of the whole image first
+        avg_lum = int(self.getAverageL(im))
+        print("avg lum" + str(avg_lum))
         
         # check if image size is too small
         if cols > W or rows > H:
@@ -152,7 +169,7 @@ class MoonBot():
                 # get average luminance
                 avg = int(self.getAverageL(img))
                 # look up ascii char
-                gsval = self.ascii_chars[int((avg*9)/255)]
+                gsval = self.ascii_chars[int((avg*99)/255)]
                 # append ascii char to string
                 aimg[j].append(gsval)
         #transpose it as its currently rotated -90 deg
@@ -169,11 +186,16 @@ class MoonBot():
         return aimg
  
     def rgb_to_gray(self, img):
+        #make an array of zeros with the shape (1000, 1000, 3)
+        # (1000 px by 1000 px each with 3 values - RGB)
         grayImage = np.zeros(img.shape)
+        
+        #take just the red, green and blue values from the 1000x1000 
         R = np.array(img[:, :, 0])
         G = np.array(img[:, :, 1])
         B = np.array(img[:, :, 2])
 
+        # ITU-R 601-2 luma transform coefficients for converting rgb > greyscale
         R = (R *.299)
         G = (G *.587)
         B = (B *.114)
@@ -183,7 +205,6 @@ class MoonBot():
 
         for i in range(3):
            grayImage[:,:,i] = Avg
-
         return grayImage       
 
     def getAverageL(self, im):

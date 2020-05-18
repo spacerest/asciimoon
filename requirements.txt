@@ -4,7 +4,7 @@ certifi==2019.6.16
 chardet==3.0.4
 idna==2.8
 importlib-metadata==0.18
-moon==1.0.4
+moon==1.0.7
 more-itertools==7.2.0
 numpy==1.16.4
 oauthlib==3.1.0
