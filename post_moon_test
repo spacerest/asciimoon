@@ -1,0 +1,36 @@
+#!/Users/sadieparker/.virtualenvs/moon/bin/python3
+
+from moon_bot import MoonBot#, TESS_CONFIG
+import cv2
+import logging
+import logging.config
+import os
+
+logging = logging.config.fileConfig(fname='file.conf', disable_existing_loggers=False)
+
+#dates = ["2020-12-14","2020-12-15","2020-12-16","2020-12-17","2020-12-18","2020-12-19","2020-12-20","2020-11-30"]
+dates = ["2021-02-16"]#,"2020-12-20","2020-11-30"]
+
+for date in dates:
+    bot = MoonBot(cache_moon_img_dir="./cached_imgs/")
+    #date_filename = self.cached_moon_img_dir + str(date) + ".jpg"
+
+    bot.get_moon(date=date)
+    bot.set_mode("numbers")
+    bot.make_ascii_tweet()
+    # bot.decide_new_moon_border()
+    bot.set_moon_info_caption()
+
+    try:
+        print(bot.ascii + bot.moon_info_caption)
+    except Exception as e:
+        print(e)
+
+    bot.set_mode("moons")
+    bot.make_ascii_tweet()
+    bot.set_moon_info_caption()
+
+    try:
+        print(bot.ascii + bot.moon_info_caption)
+    except Exception as e:
+        print(e)

@@ -1,56 +1,114 @@
-import tweepy
-import requests
 from __keys import *
 from random import randint
-from moon.dialamoon import Moon as MoonImage
+from moon.dialamoon import Moon as MoonImage, CustomImage
 import numpy as np
-import cv2
-import mimetypes
-import random
+import cv2, mimetypes, random, os, json, tweepy, requests
+import settings_dict
+from collections import Counter
+from utilities import stretch
 
 DIMS = (400, 400)
-
-SHADOW_EMOJIS = ["💥","💨","🦊","🐨","🦇","🦔","🦚","🦎","🐍","🐢","🐊","🐬","🐋","🦖","🦕","🐉","🐲","🐟","🐠","🦈","🐚","🦋","🕸","🌱","🌵","🍁","🍂","🦑","🔥","🌊","☄","⛈","🌿","☘","🍀","🦗","💎","✂️","♻️","💿","💾","📼","📷","🏔","🌨","🌎","🥀","🌷","🌸","🐾","🐌","🐏","🐻","💍","🧶"]
-LIGHT_EMOJIS = ["💥","💨","💫","🦊","🐨","🦇","🦔","🐣","🦚","🦎","🐍","🐢","🐊","🐬","🐋","🦖","🦕","🐉","🐲","🐟","🐠","🦈","🐚","🦋","🕸","🌱","🌵","🍁","🍂","🦑","🌈","⚡","🔥","🌊","✨","☄","⛈","🌾","🌿","☘","🍀","🦗","📸","📀","🔑","🏔","🌨","🌎","🥀","🌷","🌸","🐾","🐌","🐏","🐻","💍","🧶"]
+JSON_FN = "mooninfo_{year}.json"
 
 class MoonBot():
-    def __init__(self):
+    def __init__(self, cache_dir=None):
         self.maxchar = 280 #twitter maxchar
-        self.ascii_chars = ["🌑","🌑","🌑","🌑","🌑","🌑","㉄","㉄","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕",
-"🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕","🌕"]
-        self.charwidth = 10
-        self.charheight = 10
+        self.light_gradient = [str(x).zfill(2) for x in range(100)]
+        self.cache_dir = cache_dir
 
-    def set_moon_chars(self):
-        if self.moon.moon_info["age"] < 14:
-            self.ascii_chars[6:16] = ["🌒","🌒","🌒","🌒","🌒","🌒","🌒","🌒","🌒","🌒"]
-            self.ascii_chars[17:27] = ["🌓","🌓","🌓","🌓","🌓","🌓","🌓","🌓","🌓","🌓"]
-            self.ascii_chars[28:38] = ["🌔","🌔","🌔","🌔","🌔","🌔","🌔","🌔","🌔","🌔"]
-        else:
-            self.ascii_chars[6:16] = ["🌘","🌘","🌘","🌘","🌘","🌘","🌘","🌘","🌘","🌘"]
-            self.ascii_chars[17:27] = ["🌗","🌗","🌗","🌗","🌗","🌗","🌗","🌗","🌗","🌗"]
-            self.ascii_chars[28:38] = ["🌖","🌖","🌖","🌖","🌖","🌖","🌖","🌖","🌖","🌖"]
-        self.ascii_chars[4] = self.choose_random_shadow_emoji()
-        self.ascii_chars[6] = self.choose_random_shadow_emoji()
-        self.ascii_chars[9] = self.choose_random_light_emoji()
+    def set_mode(self, mode):
+        self.mode = mode
+        self.settings = settings_dict.settings[mode]
+        self.charwidth = self.settings["ascii_dims"][0]
+        self.charheight = self.settings["ascii_dims"][1]
+        self.ascii_gradient = ['']*(self.charwidth * self.charheight)
 
-    def choose_random_shadow_emoji(self):
-        return random.choice(SHADOW_EMOJIS)
+    def get_symbols_list(self, luminance):
+        try:
+            if self.moon.moon_datetime_info["age"] < 14:
+ 
+                self.ascii_gradient = stretch(self.settings["symbols"]["young_moon"], self.charwidth * self.charheight)
+            else:
+                self.ascii_gradient = stretch(self.settings["symbols"]["old_moon"], self.charwidth * self.charheight)
+
+            if self.settings["settings_type"] == "random":
+                self.ascii_gradient = self.set_random_chars()
+        except TypeError as e:
+            raise TypeError(f'Something might be wrong with your settings_dict {self.mode} mode\n' + str(e))
+
+    def set_random_chars(self):
+        ##self.set_interval(5,100,self.settings["symbols"]["FULL_MOON"])
+        #self.ascii_gradient[4] = "R"#self.choose_random_shadow_symbol()
+        #self.ascii_gradient[6] = "R"#self.choose_random_shadow_symbol()
+        #self.ascii_gradient[9] = "R"#self.choose_random_light_symbol()
+        self.border_char = self.choose_random_shadow_symbol()
+        return self.ascii_gradient
+
+    def set_interval(self, start, end_inclusive, symbol):
+        self.ascii_gradient[start:end_inclusive] = [symbol] * (end_inclusive-start)
     
-    def choose_random_light_emoji(self):
-        return random.choice(LIGHT_EMOJIS)
+    def decide_random_positions(self):
+        #get a light gradient value that has minimum
+        gradient_value_counts_dict = Counter(self.result_moon_gradients).most_common()
+        #min1, min2, min3 = (gradient_value_count[-1], gradient_value_count[-2], gradient_value_count[-2])
+        gradient_value_count = len(gradient_value_counts_dict)
+        #print(gradient_value_count)
+        #print(gradient_value_counts_dict)
+
+    def decide_new_moon_border(self):
+        if self.luminance <= .1 and self.settings["settings_type"] == "random":
+            self.add_border = True
+            surrounding_pixels_offsets = {
+                        "char_to_left": -1, 
+                        "char_to_right": 1, 
+                        "char_above": -1 * self.charwidth,
+                        "char_below": self.charwidth
+                        }
+            #make a shadow border
+            for idx, value in enumerate(self.result_moon_gradients):
+                for desc, offset in surrounding_pixels_offsets.items():
+                    try:
+                        if int(self.result_moon_gradients[idx + offset]) == 0 and int(self.result_moon_gradients[idx]) != 0:
+                            # print("offset: " + str(offset))
+                            # print(self.result_moon_gradients[idx + offset])
+                            # print(self.result_moon_gradients[idx])
+                            self.result_moon_gradients[idx] = -1
+
+                    except ValueError:
+                        pass
+                    except IndexError:
+                        pass
+            #print(self.result_moon_gradients)
+
+    def choose_random_shadow_symbol(self):
+        return random.choice(self.settings["symbols"]["random_shadow_symbols"])
+    
+    def choose_random_light_symbol(self):
+        return random.choice(self.settings["symbols"]["random_light_symbols"])
         
-    def make_ascii_tweet(self, cols, scale):
-        self.set_moon_chars()
-        self.convert_image_to_ascii(cols, scale)
+    def make_ascii_tweet(self):
+        #pdb.set_trace()
+        self.convert_image_to_ascii(self.charwidth, 1)
+        self.decide_new_moon_border()
+        self.get_symbols_list(self.luminance)
+        self.put_symbols_in_gradient()
+        self.put_output_in_square()
+        self.decide_random_positions()
+
+    def put_symbols_in_gradient(self):
+        self.ascii_list = []
+        for value in self.result_moon_gradients:
+            if value == -1:
+                self.ascii_list.append(self.border_char)
+            else:
+                self.ascii_list.append(self.ascii_gradient[int(value)])
+
+    def put_output_in_square(self):
+        self.ascii = ""
+        for x in range(0, self.charwidth):
+            for y in range(0, self.charheight):
+                self.ascii += str(self.ascii_list[(y * self.charwidth) + x])
+            self.ascii += "\n"
 
     def twitter_signin(self):
         auth = tweepy.OAuthHandler(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET)
@@ -68,7 +126,6 @@ class MoonBot():
         data = {}
         data['status'] = self.moon_info_caption + self.ascii 
         data['visibility'] = 'public'
-
         response = requests.post(
             url=self.mast_host_instance + '/api/v1/statuses', data=data, headers=self.mast_headers)
 
@@ -86,29 +143,60 @@ class MoonBot():
         files["avatar"] = (avatar_file_name, avatar, avatar_mime_type)
         response = requests.post(
             url=self.mast_host_instance + '/api/v1/accounts/update_credentials', files = files, headers = self.mast_headers, data = files)
-        print(response.text)
-        print(response.iter_content)
-        print(response.url)
-        print(response.reason)
-        print(response.request)
-        print(response.raw)
-        print(response.headers)
         if response.status_code == 200:
             return True
         else:
             return False
-        
 
-    def get_moon(self, **kwargs):    
-        self.moon = MoonImage()
-        self.moon.set_moon_phase(**kwargs)
-        cv2.imwrite("moon.jpg", self.moon.image)
+    def get_moon(self, **kwargs):
+        try:
+            self.moon = MoonImage()
+            if not self.cache_dir:
+                self.moon.set_moon_phase(**kwargs)
+            else: #check if this moon time exists in cached img dir
+                if not os.path.isdir(self.cache_dir):
+                    raise OSError((f"Can't find a directory called "
+                        "'{self.cache_dir}'. Please double "
+                        "check that you've created this directory."))
+                self.moon.set_moon_datetime(**kwargs)
+                date_filename = (f'{self.cache_dir}'
+                                f'{self.moon.datetime.year}-'
+                                f'{self.moon.datetime.month}-'
+                                f'{self.moon.datetime.day}-'
+                                f'{self.moon.datetime.hour}')
+                
+                if os.path.isfile(date_filename + '.jpg'):
+                    # TODO would be nice if `dialamoon.Moon` would do this in Moon.set_moon_phase()
+                    self.moon.image = cv2.imread(date_filename + '.jpg')
+                    self.moon.resize_image()
+                    self.set_up_cached_json()
 
-    def get_test_moon(self):
-        self.moon = CustomImage(DIMS, "testmoon", filename="moon.png")
+                else:
+                    self.moon.set_moon_phase(**kwargs)
+                    self.moon.save_to_disk(date_filename)
 
+            cv2.imwrite("moon.jpg", self.moon.image)
+        except Exception as e:
+            raise e
+
+    def set_up_cached_json(self):
+        #TODO do this in dialamoon.Moon some day
+        json_path = self.cache_dir + JSON_FN.format(year=self.moon.datetime.year)
+        if not os.path.isfile(json_path):
+            self.moon.make_json_year_data_url()
+            self.moon.set_json_year_data()
+            with open(json_path, 'w') as outfile:
+                json.dump(self.moon.moon_year_info, outfile)
+        else: 
+            with open(json_path, 'r') as outfile:
+                s = outfile.read()
+                if s == "":
+                    raise ValueError(f"The {json_path} file is empty. Please try again.")
+                self.moon.moon_year_info = json.loads(s)
+        self.moon.set_json_specific_data()
+    
     def set_moon_info_caption(self):
-        self.moon_info_caption = "...\n\n" + str(self.moon.moon_info["distance"]) + "km from earth".rjust(22, " ") + "\n" + str(self.moon.moon_info["phase"]) + "%" + "illuminated".rjust(26, " ") + "\n\n"
+        self.moon_info_caption = "...\n\n" + str(self.moon.moon_datetime_info["distance"]) + "km from earth".rjust(22, " ") + "\n" + str(self.moon.moon_datetime_info["phase"]) + "%" + "illuminated".rjust(26, " ") + "\n\n"
 
     def post_moon_tweet(self):
         self.api.update_status(self.ascii+self.moon_info_caption)
@@ -116,9 +204,7 @@ class MoonBot():
     def update_profile_image(self):
         self.api.update_profile_image("./moon.jpg")
 
-
-
-#START pixelating grayscale image with characters/emojis#
+    # START pixelating grayscale image with characters/emojis
     ### PYTHON TO ASCII ART - https://github.com/electronut/pp/blob/master/ascii/ascii.py#L2 modified to just take numpy images
 
     def convert_image_to_ascii(self, cols, scale):
@@ -138,8 +224,8 @@ class MoonBot():
         rows = int(H/h)
 
         #why not get the average luminance of the whole image first
-        avg_lum = int(self.getAverageL(im))
-        print("avg lum" + str(avg_lum))
+        self.luminance = self.getAverageL(im) / 100
+        print("avg lum" + str(self.luminance))
         
         # check if image size is too small
         if cols > W or rows > H:
@@ -168,23 +254,16 @@ class MoonBot():
                 img = im[x1:x2, y1:y2]
                 # get average luminance
                 avg = int(self.getAverageL(img))
-                # look up ascii char
-                gsval = self.ascii_chars[int((avg*99)/255)]
+                # look up value in light gradient
+                gsval = self.light_gradient[int((avg*99)/255)]
                 # append ascii char to string
                 aimg[j].append(gsval)
         #transpose it as its currently rotated -90 deg
-        aimg = list(map(list, np.transpose(aimg)))
-        aimg_str = ""
-        for x in aimg:
-            for y in x:
-                aimg_str += y
-            aimg_str += "\n"
-        
-             
-        # return txt image
-        self.ascii = aimg_str
-        return aimg
- 
+        #aimg = list(map(list, np.transpose(aimg)))
+
+        # return light_gradients
+        self.result_moon_gradients = [item for sublist in aimg for item in sublist]
+
     def rgb_to_gray(self, img):
         #make an array of zeros with the shape (1000, 1000, 3)
         # (1000 px by 1000 px each with 3 values - RGB)
@@ -222,114 +301,3 @@ class MoonBot():
 
 #END pixelating grayscale image with characters/emojis#
 
-    
-## START trying to make art from text recognition tesseract #
-#import pytesseract
-#from pytesseract import Output
-#
-#TESS_CONFIG = ('-l eng --oem 1 --psm 10')# -c textord_min_linesize=15 -c preserve_interword_spaces=1')
-#LINE_WIDTH = 6
-#
-###### thresholds for moon pics ###########
-#THRESH_DARK = 25
-#THRESH_MEDIUM1 = 120
-#THRESH_MEDIUM2= 155
-#THRESH_LIGHT = 205
-
-
-#    def draw_contours(self):
-#        im = cv2.imread('moon.png')
-#        imgray = cv2.cvtColor(self.moon.image, cv2.COLOR_BGR2GRAY)
-#
-#        white_canvas = CustomImage(DIMS, "canvas", color=(255,255,255)).image
-#        _, thresh_dark = cv2.threshold(imgray, THRESH_DARK, 255, 0)
-#        contours_dark, _ = cv2.findContours(thresh_dark, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-#        
-#        _, thresh_medium1 = cv2.threshold(imgray, THRESH_MEDIUM1, 255, 0)
-#        contours_medium1, _ = cv2.findContours(thresh_medium1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-#         
-#        _, thresh_medium2 = cv2.threshold(imgray, THRESH_MEDIUM2, 255, 0)
-#        contours_medium2, _ = cv2.findContours(thresh_medium2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-#        
-#        _, thresh_light= cv2.threshold(imgray, THRESH_LIGHT, 255, 0)
-#        contours_light, _ = cv2.findContours(thresh_light, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-#
-#        #thresh = cv2.threshold(self.moon.image, 127, 255, 0)
-#
-#	######colored contours##############################################
-#        #cv2.drawContours(white_canvas, contours_light, -1, (255,0,0), 1)
-#        #cv2.drawContours(white_canvas, contours_medium1, -1, (0,255,100), 1)
-#        #cv2.drawContours(white_canvas, contours_medium2, -1, (255,0,255), 1)
-#        #cv2.drawContours(white_canvas, contours_dark, -1, (0,150,255), 1)
-#
-#        cv2.drawContours(white_canvas, contours_light, -1, (0,0,0), LINE_WIDTH)
-#        cv2.drawContours(white_canvas, contours_medium1, -1, (0,0,0), LINE_WIDTH)
-#        #cv2.drawContours(white_canvas, contours_dark, -1, (0,0,0), LINE_WIDTH)
-#        #cv2.imshow("test", white_canvas)
-#        #cv2.waitKey()
-#        #cv2.destroyAllWindows()
-#        self.moon.image = white_canvas 
-#
-#    def get_image_tiles(self, im, num_tiles):
-#        """Splits an image into num_tiles x num_tiles image array"""
-#        tiles = []
-#        im_dim = im.shape[0]
-#        tile_dim = int(im_dim / num_tiles)
-#        y1, y2 = 0, tile_dim 
-#        for column in range(num_tiles):
-#            tiles.append([])
-#            x1, x2 = 0, tile_dim 
-#            for row in range(num_tiles):
-#                tiles[column].append(im[x1:x2, y1:y2])
-#                x1 += tile_dim 
-#                x2 += tile_dim
-#                #cv2.imshow("test", tiles[column][row])
-#                #cv2.waitKey()
-#                #cv2.destroyAllWindows()
-#            y1 += tile_dim
-#            y2 += tile_dim
-#        self.tiles = tiles
-#   
-#    def map_tiles_to_chars(self, tiles):
-#        art = []
-#        for column in range(len(tiles)):
-#            art.append([])
-#            for row in range(len(tiles)):
-#                im = tiles[column][row] 
-#                
-#                d = pytesseract.image_to_data(im, config = TESS_CONFIG, output_type=Output.DICT)
-#                print(d)
-#                n_boxes = len(d['level'])
-#
-#                for i in range(n_boxes):
-#                    (x, y, w, h, t) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i], d["text"][i])
-#                    cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 2)
-#                    print(d["text"][i])
-#                    cv2.imshow('img', im)
-#                    cv2.waitKey()
-#                    cv2.destroyAllWindows()
-#
-#
-#                #char = char.rjust(7, ' ')
-#                #print(char)
-#                #art[column].append(char) 
-#                #cv2.imshow("test", tiles[column][row])
-#                #cv2.waitKey()
-#                #cv2.destroyAllWindows()
-#	#transpose it as its currently rotated -90 deg
-#        #art = list(map(list, np.transpose(art)))
-#        #for row in art:
-#        #    s = "."
-#        #    for col in row:
-#        #        if col == "": col = " "
-#        #        col = col 
-#        #        col = col.center(4, " ")
-#        #        s+=col 
-#        #    print(s)
-#        #print(art)
-#   
-#    def get_text(self):
-#        self.text = pytesseract.image_to_string(self.moon.image, config = TESS_CONFIG)
-#
-#
-# END trying to make art from text recognition tesseract #

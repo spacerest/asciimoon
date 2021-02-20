@@ -4,4 +4,6 @@ venv
 *.swp
 *.swo
 __*
+*.sublime-project
+*.sublime-workspace
 
