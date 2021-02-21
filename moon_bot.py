@@ -175,6 +175,7 @@ class MoonBot():
                     self.moon.set_moon_phase(**kwargs)
                     self.moon.save_to_disk(date_filename)
 
+            self.moon.image = cv2.resize(self.moon.image, (200,200))
             cv2.imwrite("moon.jpg", self.moon.image)
         except Exception as e:
             raise e
@@ -225,7 +226,6 @@ class MoonBot():
 
         #why not get the average luminance of the whole image first
         self.luminance = self.getAverageL(im) / 100
-        print("avg lum" + str(self.luminance))
         
         # check if image size is too small
         if cols > W or rows > H:
