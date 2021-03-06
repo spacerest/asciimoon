@@ -127,26 +127,26 @@ class MoonBot():
 				luminance_color = 256 - int(256/(1 + int(self.result_moon_gradients[(x * self.charwidth) + y])))
 				
 				if self.moon_sign in ["Taurus", "Capricorn", "Virgo"]:
-					r = 255
-					g = luminance_color
+					r = 0
+					g = 255 - int(luminance_color/25)
 					b = 255 -  luminance_color
 				elif self.moon_sign in ["Sagittarius", "Leo", "Aries"]:
-					g = 255
-					r = luminance_color
+					g = 0
+					r = 255 - int(luminance_color/25)
 					b = 255 -  luminance_color
 				elif self.moon_sign in ["Gemini", "Libra", "Aquarius"]:
-					r = 255
-					b = luminance_color
-					g = 255 -  luminance_color
+					r = 0
+					b = 255 - int(luminance_color/25)
+					g = 255 - luminance_color
 				elif self.moon_sign in ["Pisces", "Cancer", "Scorpio"]:
-					g = 255
-					b = luminance_color
-					r = 255 -  luminance_color
+					g = 0
+					b = 255 - int(luminance_color/25)
+					r = 255 - luminance_color
 
 				#print(r, g, b)
 				if r > 255 or g > 255 or b > 255:
 					raise ValueError(f"One of your RGB colors is higher than 255, your luminance_color is: {luminance_color}")
-				font_color=(255 - r, 255 - g, 255 - b)
+				font_color=(255 - int(r / (x + 1)), 255 - int(g / (x + 1)), 255 - int(b / ( y + 1)))
 
 				draw.text ( (x * int(width/self.charwidth) ,y * int(width/self.charheight)), self.ascii_list[(x * self.charwidth) + y], font=unicode_font, fill=font_color )
 
