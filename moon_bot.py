@@ -123,8 +123,30 @@ class MoonBot():
 		draw  =  ImageDraw.Draw ( im )
 		for x in range(0, self.charwidth):
 			for y in range(0, self.charheight):
-				luminance_color = 255 - int(256/(1 + int(self.result_moon_gradients[(x * self.charwidth) + y])))
-				font_color=(255,luminance_color,255 - luminance_color)
+
+				luminance_color = 256 - int(256/(1 + int(self.result_moon_gradients[(x * self.charwidth) + y])))
+				
+				if self.moon_sign in ["Taurus", "Capricorn", "Virgo"]:
+					r = 255
+					g = luminance_color
+					b = 255 -  luminance_color
+				elif self.moon_sign in ["Sagittarius", "Leo", "Aries"]:
+					g = 255
+					r = luminance_color
+					b = 255 -  luminance_color
+				elif self.moon_sign in ["Gemini", "Libra", "Aquarius"]:
+					r = 255
+					b = luminance_color
+					g = 255 -  luminance_color
+				elif self.moon_sign in ["Pisces", "Cancer", "Scorpio"]:
+					g = 255
+					b = luminance_color
+					r = 255 -  luminance_color
+
+				#print(r, g, b)
+				if r > 255 or g > 255 or b > 255:
+					raise ValueError(f"One of your RGB colors is higher than 255, your luminance_color is: {luminance_color}")
+				font_color=(255 - r, 255 - g, 255 - b)
 
 				draw.text ( (x * int(width/self.charwidth) ,y * int(width/self.charheight)), self.ascii_list[(x * self.charwidth) + y], font=unicode_font, fill=font_color )
 
@@ -136,8 +158,8 @@ class MoonBot():
 		draw = ImageDraw.Draw(background_im)
 		offset = ((twitter_im_width - width) // 2, (twitter_im_height - height) // 2)
 		background_im.paste(im, offset)
-		#background_im.show()
-		background_im.save("moon_emojis.jpg")
+		background_im.show()
+		background_im.save("moon_emojis.png") #.jpg makes problems
 
 	def calculate_luminosity(self):
 		self.average_luminosity = 1
