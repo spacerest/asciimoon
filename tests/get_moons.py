@@ -1,5 +1,3 @@
-#to run: python -m unittest from asciimoon/.
-
 import unittest, os, datetime
 from moon_bot import MoonBot
 
@@ -50,6 +48,7 @@ class TestAsciiMoon(unittest.TestCase):
     	with open("cached_moons/mooninfo_2021.json", 'w') as f:
     		f.write("")
     	self.assertRaises(ValueError, m.get_moon, date="2021-02-02")
+
 
 if __name__ == '__main__':
     unittest.main()
