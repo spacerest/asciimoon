@@ -16,7 +16,7 @@ from flatlib.tools.chartdynamics import ChartDynamics
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw,ImageFont, ImageFilter
 
-DIMS = (20, 20)
+DIMS = (400, 400)
 JSON_FN = "mooninfo_{year}.json"
 
 class MoonBot():
@@ -108,28 +108,36 @@ class MoonBot():
 		#In-stream images are displayed at a 16:9 ratio of 600px by 335px 
 		# and can be clicked and expanded up to 1200px by 675px.
 		font_size=80
-		width=350
-		height=350
-		back_ground_color=(254,230,225)
-		font_size=37
+		width=DIMS[0]
+		height=DIMS[1]
+		twitter_im_width = 800
+		twitter_im_height = 450
+		back_ground_color=(0,0,0)#(254,230,225)
+		font_size=int(width/self.charwidth)
 		unicode_text = self.ascii
 		im = Image.open("moon.jpg")
+		#im =  Image.new ( "RGB", (width,height), back_ground_color )
+
+
 		unicode_font = ImageFont.truetype("unicode-emoji/symbola/Symbola.ttf", font_size)
 		draw  =  ImageDraw.Draw ( im )
-
-
-
 		for x in range(0, self.charwidth):
 			for y in range(0, self.charheight):
-				font_color=(250-y-x,200-y-x,210-y-x)
+				luminance_color = 255 - int(256/(1 + int(self.result_moon_gradients[(x * self.charwidth) + y])))
+				font_color=(255,luminance_color,255 - luminance_color)
 
-				draw.text ( (x,y), unicode_text, font=unicode_font, fill=font_color )
+				draw.text ( (x * int(width/self.charwidth) ,y * int(width/self.charheight)), self.ascii_list[(x * self.charwidth) + y], font=unicode_font, fill=font_color )
 
-				self.ascii += str(self.ascii_list[(y * self.charwidth) + x])
+				#self.ascii += str(self.ascii_list[(y * self.charwidth) + x])
 			self.ascii += "\n"
 
 		#im  =  Image.new ( "RGB", (width,height), back_ground_color )
-		im.show()
+		background_im =  Image.new ( "RGB", (twitter_im_width,twitter_im_height), back_ground_color )
+		draw = ImageDraw.Draw(background_im)
+		offset = ((twitter_im_width - width) // 2, (twitter_im_height - height) // 2)
+		background_im.paste(im, offset)
+		#background_im.show()
+		background_im.save("moon_emojis.jpg")
 
 	def calculate_luminosity(self):
 		self.average_luminosity = 1
@@ -210,7 +218,7 @@ class MoonBot():
 					self.moon.save_to_disk(date_filename)
 
 			#self.moon.image = cv2.resize(self.moon.image, DIMS)
-			self.moon.image = cv2.resize(self.moon.image, (350,350))
+			self.moon.image = cv2.resize(self.moon.image, DIMS)
 
 			#self.moon.image = cv2.resize(self.moon.image, (200,200))
 			cv2.imwrite("moon.jpg", self.moon.image)
