@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+
 x = np.zeros((10, 10, 3))
 #x[:, :, 0:3] = np.random.uniform(0, 1, (3,))
 #plt.imshow(x)

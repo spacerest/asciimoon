@@ -42,6 +42,7 @@ class TestAsciiMoon(unittest.TestCase):
 		assert bot.ascii_list[0] == " ⓽ " and bot.ascii_list[-1] == " ⓪ "# and int(bot.ascii_list[4][0]) + (bot.ascii_list[5][0]) == 100 
 
 	def test_can_get_average_luminosity_of_white_image(self):
+		#TODO do more testing on luminosity stuff, all it does now is make histogram
 		bot = MoonBot(cache_dir="cached_moons/")
 
 		img = np.full((500, 500, 3), 255, dtype = np.uint8) 
@@ -55,20 +56,29 @@ class TestAsciiMoon(unittest.TestCase):
 
 		assert bot.average_luminosity == 1
 
-	def test_can_get_average_luminosity_of_black_image(self):
+	# def test_can_get_average_luminosity_of_black_image(self):
+	# 	bot = MoonBot(cache_dir="cached_moons/")
+
+	# 	img = np.full((500, 500, 3), 0, dtype = np.uint8) 
+
+	# 	#make a moon but replace it with the white img
+
+	# 	bot.get_moon(date="2020-02-20")
+	# 	bot.moon.image = img
+	# 	bot.make_histogram()
+	# 	print(bot.hist)
+	# 	bot.calculate_luminosity()
+
+	# 	assert bot.average_luminosity == 0
+
+	def test_finds_least_frequent_luminosity_values(self):
 		bot = MoonBot(cache_dir="cached_moons/")
-
-		img = np.full((500, 500, 3), 0, dtype = np.uint8) 
-
-		#make a moon but replace it with the white img
-
 		bot.get_moon(date="2020-02-20")
-		bot.moon.image = img
-		bot.make_histogram()
-		print(bot.hist)
-		bot.calculate_luminosity()
-
-		assert bot.average_luminosity == 0
+		bot.set_modes(gradient_symbols="inverted_moons", astrology=True)
+		bot.make_ascii_tweet()
+		print(bot.least_often_gradient_value1)
+		print(bot.least_often_gradient_value2)
+		assert bot.least_often_gradient_value1
 
 
 

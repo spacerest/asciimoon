@@ -1,6 +1,6 @@
 from __keys import *
 from random import randint, choice
-#from collections import Counter
+from collections import Counter
 from moon.dialamoon import Moon as MoonImage, CustomImage
 import numpy as np
 import cv2, mimetypes, random, os, json, tweepy, requests
@@ -56,16 +56,12 @@ class MoonBot():
 				#check whether there's a border character adjacent to this one
 				border_char_adjacent = -1 in [self.result_moon_gradients[idx + offset] for offset in surrounding_pixels_offsets.values() if idx + offset >= 0 and idx + offset <= (self.charwidth * self.charheight) - 1]
 				if border_char_adjacent:
-					#print(f"border char adjacent for {idx}")
 					continue
 				for desc, offset in surrounding_pixels_offsets.items():
 					if idx + offset >= 0 and idx + offset <= (self.charwidth * self.charheight) - 1:#ignore negative offsets as they're at the end of the array and not nearby
 						try:
 							if int(self.result_moon_gradients[idx + offset]) == 0 and int(self.result_moon_gradients[idx]) > 0:
-								# print(f"{idx} and {value} in moon")
-								# print(f"offset:  {desc} {str(offset)}")
-								# print(self.result_moon_gradients[idx + offset])
-								# print(self.result_moon_gradients[idx])
+
 								self.result_moon_gradients[idx + offset] = -1
 
 						except ValueError:
@@ -89,36 +85,43 @@ class MoonBot():
 		self.set_symbols_list(self.luminosity)
 		self.put_symbols_in_gradient()
 		self.put_output_in_square()
-		self.take_screenshot_to_post()
+		self.make_img_to_post()
 
 	def put_symbols_in_gradient(self):
 		self.ascii_list = []
+		if self.astrology:
+			#find which luminances have just one or two
+			self.least_often_gradient_value1 = Counter(self.result_moon_gradients).most_common()[-1][0]
+			self.least_often_gradient_value2 = Counter(self.result_moon_gradients).most_common()[-2][0]
 		for value in self.result_moon_gradients:
-			if value == -2:
+			if value == self.least_often_gradient_value1:
+				self.ascii_list.append(self.astrology_sign_random_emoji)
+			elif value == self.least_often_gradient_value2:
+				self.ascii_list.append(self.astrology_element_random_emoji)
+			elif value == -2:
 				self.border_char = "💡" #$todo
 				self.ascii_list.append(self.border_char)
-			if value == -1:
+			elif value == -1:
 				self.border_char = "🌚" #$todo
 				self.ascii_list.append(self.border_char)
 			else:
 				self.ascii_list.append(self.ascii_gradient[int(value)])
 	
-	def take_screenshot_to_post(self):
+	def make_img_to_post(self):
 		#In-stream images are displayed at a 16:9 ratio of 600px by 335px 
 		# and can be clicked and expanded up to 1200px by 675px.
-		font_size=80
-		width=DIMS[0]
-		height=DIMS[1]
+		font_size = 80
+		width = DIMS[0]
+		height = DIMS[1]
 		twitter_im_width = 800
 		twitter_im_height = 450
-		back_ground_color=(0,0,0)#(254,230,225)
+		bg_color = (0, 0, 0)
 		font_size=int(width/self.charwidth)
 		unicode_text = self.ascii
 		im = Image.open("moon.jpg")
-		#im =  Image.new ( "RGB", (width,height), back_ground_color )
+		#im =  Image.new ( "RGB", (width,height), bg_color )
 
-
-		unicode_font = ImageFont.truetype("unicode-emoji/symbola/Symbola.ttf", font_size)
+		unicode_font = ImageFont.truetype("res/unicode-emoji/symbola/Symbola.ttf", font_size)
 		draw  =  ImageDraw.Draw ( im )
 		for x in range(0, self.charwidth):
 			for y in range(0, self.charheight):
@@ -126,27 +129,27 @@ class MoonBot():
 				lum = int(255 - 255/(int(self.result_moon_gradients[(x * self.charwidth) + y]) + 1))
 				if type(lum) == type(1.0):
 					raise ValueError("float ", lum)
-				elif self.moon_sign in ["Sagittarius", "Leo", "Aries"]:
-					g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
-					b = lum
-					r = 255
-				elif self.moon_sign in ["Taurus", "Capricorn", "Virgo"]:
-					r = lum
-					g = 255
-					b = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
-				elif self.moon_sign in ["Gemini", "Libra", "Aquarius"]:
-					g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
-					r = lum
-					b = 255
-				elif self.moon_sign in ["Pisces", "Cancer", "Scorpio"]:
-					g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
-					r = lum
-					b = 255
+				if self.astrology == True:
+					if self.moon_sign in ["Sagittarius", "Leo", "Aries"]:
+						g = lum
+						b = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+						r = 255
+					elif self.moon_sign in ["Taurus", "Capricorn", "Virgo"]:
+						r = lum
+						g = 255
+						b = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+					elif self.moon_sign in ["Gemini", "Libra", "Aquarius"]:
+						g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+						r = lum
+						b = 255
+					elif self.moon_sign in ["Pisces", "Cancer", "Scorpio"]:
+						g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+						r = lum
+						b = 255
+				else:
+					#todo make an rgb that looks good
+					r, g, b = (lum, lum, lum)
 
-
-
-
-				#print(r, g, b)
 				if r > 255 or g > 255 or b > 255:
 					raise ValueError(f"One of your RGB colors is higher than 255, your lum is: {lum}")
 				font_color=(r, g, b)
@@ -155,8 +158,8 @@ class MoonBot():
 
 		#draw.text ( (0,0), self.moon_sign, font=unicode_font, fill=(255,255,0) )
 				#self.ascii += str(self.ascii_list[(y * self.charwidth) + x])
-		#im  =  Image.new ( "RGB", (width,height), back_ground_color )
-		background_im =  Image.new ( "RGB", (twitter_im_width,twitter_im_height), back_ground_color )
+		#im  =  Image.new ( "RGB", (width,height), bg_color )
+		background_im =  Image.new ( "RGB", (twitter_im_width,twitter_im_height), bg_color )
 		draw = ImageDraw.Draw(background_im)
 		offset = ((twitter_im_width - width) // 2, (twitter_im_height - height) // 2)
 		background_im.paste(im, offset)
@@ -245,15 +248,6 @@ class MoonBot():
 		#TODO clean up so it isn't so rickety
 		try:
 			if self.settings["settings_type"] == "map":
-				if self.astrology:
-					# #find which luminances have just one or two
-					# i1 = self.ascii_gradient
-
-					self.settings["intervals"]["old_moon"][11] = self.astrology_element_random_emoji
-					self.settings["intervals"]["young_moon"][11] = self.astrology_element_random_emoji
-					self.settings["intervals"]["old_moon"][12] = self.astrology_sign_random_emoji
-					self.settings["intervals"]["young_moon"][12] = self.astrology_sign_random_emoji
-
 				if self.moon.moon_datetime_info["age"] < 14:
 						intervals = self.settings["intervals"]["young_moon"]
 				else:
