@@ -119,6 +119,8 @@ class MoonBot():
 		font_size=int(width/self.charwidth)
 		unicode_text = self.ascii
 		im = Image.open("moon.jpg")
+		moon_waning = self.moon.moon_datetime_info["age"] > 14
+
 		#im =  Image.new ( "RGB", (width,height), bg_color )
 
 		unicode_font = ImageFont.truetype("res/unicode-emoji/symbola/Symbola.ttf", font_size)
@@ -131,21 +133,25 @@ class MoonBot():
 					raise ValueError("float ", lum)
 				if self.astrology == True:
 					if self.moon_sign in ["Sagittarius", "Leo", "Aries"]:
-						g = lum
-						b = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+						#red, yellow
 						r = 255
+						g = lum
+						b = int(255 - (255 / (lum + 1) * (moon_waning * x * self.charwidth + y + 1)))
 					elif self.moon_sign in ["Taurus", "Capricorn", "Virgo"]:
+						#green, blue
 						r = lum
 						g = 255
-						b = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+						b = int(255 - (255 / (lum + 1) * (moon_waning * x * self.charwidth + y + 1)))
 					elif self.moon_sign in ["Gemini", "Libra", "Aquarius"]:
-						g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+						#blue, purple
 						r = lum
+						g = int(255 - (255 / (lum + 1) * (moon_waning * x * self.charwidth + y + 1)))
 						b = 255
 					elif self.moon_sign in ["Pisces", "Cancer", "Scorpio"]:
-						g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
-						r = lum
-						b = 255
+						#blue, green
+						r = 255
+						g = int(255 - (255 / (lum + 1) * (moon_waning * x * self.charwidth + y + 1)))
+						b = lum
 				else:
 					#todo make an rgb that looks good
 					r, g, b = (lum, lum, lum)
