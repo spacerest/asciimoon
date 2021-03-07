@@ -312,15 +312,17 @@ class MoonBot():
 		self.alt_text = f"Image of the moon, {self.moon.moon_datetime_info['phase']}% illuminated, with emojis overlaid"
 
 	def post_moon_tweet(self):
-		media_id = self.twitter_api.media_upload("moon_emojis.png")
-		print(media_id["media_id_string"])
-		# print(alt_text)
-		# r = self.twitter_api.create_media_metadata(
-		# 	media_id="1368311485408153605", 
-		# 	self.alt_text="hi")
-		# print("response is ", r)
-		self.twitter_api.update_status(self.moon_info_caption, media_ids=[media_id["media_id_string"]])
-		#self.twitter_api.update_status(self.ascii+)
+		media = self.twitter_api.media_upload("moon_emojis.png")
+		print(media["media_id_string"])
+		print(self.alt_text)
+
+		#if .create_media_metadata makes a problem, it may be because tweepy.parser.JSONParser 
+		#is receiving '' as payload (from resp.text) and json.loads() errors
+		r = self.twitter_api.create_media_metadata(
+			media_id=media["media_id_string"], 
+			alt_text=self.alt_text)
+		print("response is ", r)
+		self.twitter_api.update_status(self.moon_info_caption, media_ids=[media["media_id_string"]])
 
 	def update_profile_image(self):
 		self.twitter_api.update_profile_image("./moon.jpg")
