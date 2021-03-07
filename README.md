@@ -10,8 +10,8 @@ This is a script for a bot that posts an image of an emoji representation & some
 ## updates:
 - March 7, 2021 
   - Instead of posting strings of emojis, now posting images of emojis printed in Symbola font on an image of the moon
-  - Added alt text for mastodon
-  - Determine the random emojis and font color based on the lunar zodiac per `flatlib`
+  - Added alt text for mastodon and twitter
+  - Determine the random emojis and font color based on the lunar zodiac placement per `flatlib`
 
 
 ## sources:
