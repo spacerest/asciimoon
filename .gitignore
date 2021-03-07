@@ -5,4 +5,5 @@ venv
 __*
 *.sublime-project
 *.sublime-workspace
+__keys.py
 

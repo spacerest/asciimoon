@@ -1,23 +1,27 @@
-#!/home/sadie/bots/moonbot/asciimoon/venv/bin/python3.6
+#!/Users/sadieparker/.virtualenvs/moon/bin/python3
 
 from moon_bot import MoonBot#, TESS_CONFIG
 import cv2
 
 bot = MoonBot()
+bot.set_modes(gradient_symbols="inverted_moons", astrology=True)
 bot.get_moon()
-bot.make_ascii_tweet(10, 1)
+
+bot.make_ascii_tweet()
 bot.set_moon_info_caption()
+bot.set_alt_text()
+
+# try:
+#     bot.twitter_signin()
+#     # bot.decide_new_moon_border()
+#     bot.post_moon_tweet()
+#     bot.update_profile_image()
+# except Exception as e:
+#     print(e)
 
 try:
-    bot.twitter_signin()
-    bot.post_moon_tweet()
-    bot.update_profile_image()
-except Exception as e:
-    print(e)
-
-try:
-    bot.mast_set_headers()
+    bot.mast_signin()
     bot.post_moon_toot()
-#    #bot.mast_update_profile_image()
-except Exception:
-    pass
+    #bot.mast_update_profile_image()
+except Exception as e:
+    raise e

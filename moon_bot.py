@@ -1,8 +1,10 @@
 from __keys import *
 from random import randint, choice
+#from collections import Counter
 from moon.dialamoon import Moon as MoonImage, CustomImage
 import numpy as np
 import cv2, mimetypes, random, os, json, tweepy, requests
+from mastodon import Mastodon
 from res import settings_dict
 from res.astrology_dict import astrology_dict
 from collections import Counter
@@ -15,6 +17,7 @@ from flatlib import const
 from flatlib.tools.chartdynamics import ChartDynamics
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw,ImageFont, ImageFilter
+import pdb
 
 DIMS = (400, 400)
 JSON_FN = "mooninfo_{year}.json"
@@ -33,9 +36,6 @@ class MoonBot():
 		self.charwidth = self.settings["ascii_dims"][0]
 		self.charheight = self.settings["ascii_dims"][1]
 		self.ascii_gradient = ['']*(self.charwidth * self.charheight)
-
-	def find_lightest_index(self):
-		self.result_moon_gradients[self.result_moon_gradients.index(max(self.result_moon_gradients))] = -2
 
 	def decide_new_moon_border(self):
 		#if True:#self.luminosity <= .1 and self.settings["settings_type"] == "random":
@@ -83,7 +83,6 @@ class MoonBot():
 	def make_ascii_tweet(self):
 		#pdb.set_trace()
 		self.convert_image_to_ascii(self.charwidth, 1)
-		#self.find_lightest_index()
 		#self.decide_new_moon_border()
 		if self.astrology:
 			self.set_astrology_info()
@@ -124,35 +123,38 @@ class MoonBot():
 		for x in range(0, self.charwidth):
 			for y in range(0, self.charheight):
 
-				luminance_color = 256 - int(256/(1 + int(self.result_moon_gradients[(x * self.charwidth) + y])))
-				
-				if self.moon_sign in ["Taurus", "Capricorn", "Virgo"]:
-					r = 0
-					g = 255 - int(luminance_color/25)
-					b = 255 -  luminance_color
+				lum = int(255 - 255/(int(self.result_moon_gradients[(x * self.charwidth) + y]) + 1))
+				if type(lum) == type(1.0):
+					raise ValueError("float ", lum)
 				elif self.moon_sign in ["Sagittarius", "Leo", "Aries"]:
-					g = 0
-					r = 255 - int(luminance_color/25)
-					b = 255 -  luminance_color
+					g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+					b = lum
+					r = 255
+				elif self.moon_sign in ["Taurus", "Capricorn", "Virgo"]:
+					r = lum
+					g = 255
+					b = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
 				elif self.moon_sign in ["Gemini", "Libra", "Aquarius"]:
-					r = 0
-					b = 255 - int(luminance_color/25)
-					g = 255 - luminance_color
+					g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+					r = lum
+					b = 255
 				elif self.moon_sign in ["Pisces", "Cancer", "Scorpio"]:
-					g = 0
-					b = 255 - int(luminance_color/25)
-					r = 255 - luminance_color
+					g = int(255 - (255 / (lum + 1) * (x * self.charwidth + y + 1)))
+					r = lum
+					b = 255
+
+
+
 
 				#print(r, g, b)
 				if r > 255 or g > 255 or b > 255:
-					raise ValueError(f"One of your RGB colors is higher than 255, your luminance_color is: {luminance_color}")
-				font_color=(255 - int(r / (x + 1)), 255 - int(g / (x + 1)), 255 - int(b / ( y + 1)))
+					raise ValueError(f"One of your RGB colors is higher than 255, your lum is: {lum}")
+				font_color=(r, g, b)
 
 				draw.text ( (x * int(width/self.charwidth) ,y * int(width/self.charheight)), self.ascii_list[(x * self.charwidth) + y], font=unicode_font, fill=font_color )
 
+		#draw.text ( (0,0), self.moon_sign, font=unicode_font, fill=(255,255,0) )
 				#self.ascii += str(self.ascii_list[(y * self.charwidth) + x])
-			self.ascii += "\n"
-
 		#im  =  Image.new ( "RGB", (width,height), back_ground_color )
 		background_im =  Image.new ( "RGB", (twitter_im_width,twitter_im_height), back_ground_color )
 		draw = ImageDraw.Draw(background_im)
@@ -178,39 +180,31 @@ class MoonBot():
 		auth = tweepy.OAuthHandler(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET)
 		auth.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
 		auth.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
-		self.api = tweepy.API(auth)
+		self.twitter_api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 
-	def mast_set_headers(self):
-		self.mast_host_instance = 'https://botsin.space'
-		token = MAST_ACCESS_TOKEN
-		self.mast_headers = {}
-		self.mast_headers['Authorization'] = 'Bearer ' + token
+	def mast_signin(self):
+		self.mast_api = Mastodon(client_id=MAST_CLIENT_KEY, 
+			client_secret=MAST_CLIENT_SECRET, 
+			api_base_url='https://botsin.space', 
+			access_token=MAST_ACCESS_TOKEN)
 
 	def post_moon_toot(self):
+		FPATH = ""
 		data = {}
-		data['status'] = self.moon_info_caption + self.ascii 
-		data['visibility'] = 'public'
-		response = requests.post(
-			url=self.mast_host_instance + '/api/v1/statuses', data=data, headers=self.mast_headers)
-
-		if response.status_code == 200:
-			return True
-		else:
-			return False
-
+		try:
+			image = FPATH + "moon_emojis.png"
+			media = self.mast_api.media_post(image, description=self.alt_text)
+			status = self.mast_api.status_post(self.moon_info_caption,media_ids=media,sensitive=False)
+		except Exception as e:
+			raise e
+		
 	#TODO use python mastodon api port or figure out why this isn't working
 	def mast_update_profile_image(self):
-		files = {}
-		avatar = open("./moon.jpg", 'rb')
-		avatar_mime_type = mimetypes.guess_type("./moon.jpg")[0]
-		avatar_file_name = "moon_" + avatar_mime_type
-		files["avatar"] = (avatar_file_name, avatar, avatar_mime_type)
-		response = requests.post(
-			url=self.mast_host_instance + '/api/v1/accounts/update_credentials', files = files, headers = self.mast_headers, data = files)
-		if response.status_code == 200:
-			return True
-		else:
-			return False
+		# with open('moon.jpg', 'rb') as f:
+		#     image = f.read()
+
+		account = self.mast_api.account_update_credentials(
+		    avatar = "moon.jpg")
 
 	def get_moon(self, **kwargs):
 		try:
@@ -252,10 +246,13 @@ class MoonBot():
 		try:
 			if self.settings["settings_type"] == "map":
 				if self.astrology:
+					# #find which luminances have just one or two
+					# i1 = self.ascii_gradient
+
 					self.settings["intervals"]["old_moon"][11] = self.astrology_element_random_emoji
 					self.settings["intervals"]["young_moon"][11] = self.astrology_element_random_emoji
-					self.settings["intervals"]["old_moon"][10] = self.astrology_sign_random_emoji
-					self.settings["intervals"]["young_moon"][10] = self.astrology_sign_random_emoji
+					self.settings["intervals"]["old_moon"][12] = self.astrology_sign_random_emoji
+					self.settings["intervals"]["young_moon"][12] = self.astrology_sign_random_emoji
 
 				if self.moon.moon_datetime_info["age"] < 14:
 						intervals = self.settings["intervals"]["young_moon"]
@@ -311,11 +308,22 @@ class MoonBot():
 	def set_moon_info_caption(self):
 		self.moon_info_caption = "...\n\n" + str(self.moon.moon_datetime_info["distance"]) + "km from earth".rjust(22, " ") + "\n" + str(self.moon.moon_datetime_info["phase"]) + "%" + "illuminated".rjust(26, " ") + "\n\n"
 
+	def set_alt_text(self):
+		self.alt_text = f"Image of the moon, {self.moon.moon_datetime_info['phase']}% illuminated, with emojis overlaid"
+
 	def post_moon_tweet(self):
-		self.api.update_status(self.ascii+self.moon_info_caption)
+		media_id = self.twitter_api.media_upload("moon_emojis.png")
+		print(media_id["media_id_string"])
+		# print(alt_text)
+		# r = self.twitter_api.create_media_metadata(
+		# 	media_id="1368311485408153605", 
+		# 	self.alt_text="hi")
+		# print("response is ", r)
+		self.twitter_api.update_status(self.moon_info_caption, media_ids=[media_id["media_id_string"]])
+		#self.twitter_api.update_status(self.ascii+)
 
 	def update_profile_image(self):
-		self.api.update_profile_image("./moon.jpg")
+		self.twitter_api.update_profile_image("./moon.jpg")
 
 	# START pixelating grayscale image with characters/emojis
 	### PYTHON TO ASCII ART - https://github.com/electronut/pp/blob/master/ascii/ascii.py#L2 modified to just take numpy images
