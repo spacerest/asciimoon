@@ -313,15 +313,13 @@ class MoonBot():
 
 	def post_moon_tweet(self):
 		media = self.twitter_api.media_upload("moon_emojis.png")
-		print(media["media_id_string"])
-		print(self.alt_text)
 
 		#if .create_media_metadata makes a problem, it may be because tweepy.parser.JSONParser 
 		#is receiving '' as payload (from resp.text) and json.loads() errors
 		r = self.twitter_api.create_media_metadata(
 			media_id=media["media_id_string"], 
 			alt_text=self.alt_text)
-		print("response is ", r)
+
 		self.twitter_api.update_status(self.moon_info_caption, media_ids=[media["media_id_string"]])
 
 	def update_profile_image(self):
@@ -351,7 +349,7 @@ class MoonBot():
 		
 		# check if image size is too small
 		if cols > W or rows > H:
-			print("Image too small for specified cols!")
+			raise Exception("Image too small for specified cols!")
 			exit(0)
 	
 		# ascii image is a list of character lists 
